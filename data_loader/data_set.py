@@ -5,8 +5,32 @@ import torch
 from torch.utils.data import Dataset
 import util.logger as logger
 
+def seqCollate(data):
+    (obs_seq_list, pred_seq_list, obs_seq_rel_list, pred_seq_rel_list,
+     non_linear_ped_list, loss_mask_list) = zip(*data)
 
-def read_file(file, delim):
+    _len = [len(seq) for seq in obs_seq_list]
+    cum_start_idx = [0] + np.cumsum(_len).tolist()
+    seq_start_end = [[start, end]
+                     for start, end in zip(cum_start_idx, cum_start_idx[1:])]
+
+    # Data format: batch, input_size, seq_len
+    # LSTM input format: seq_len, batch, input_size
+    obs_traj = torch.cat(obs_seq_list, dim=0).permute(2, 0, 1)
+    pred_traj = torch.cat(pred_seq_list, dim=0).permute(2, 0, 1)
+    obs_traj_rel = torch.cat(obs_seq_rel_list, dim=0).permute(2, 0, 1)
+    pred_traj_rel = torch.cat(pred_seq_rel_list, dim=0).permute(2, 0, 1)
+    non_linear_ped = torch.cat(non_linear_ped_list)
+    loss_mask = torch.cat(loss_mask_list, dim=0)
+    seq_start_end = torch.LongTensor(seq_start_end)
+    out = [
+        obs_traj, pred_traj, obs_traj_rel, pred_traj_rel, non_linear_ped,
+        loss_mask, seq_start_end
+    ]
+
+    return tuple(out)
+
+def readFile(file, delim):
     data = []
     if delim == 'tab':
         delim = '\t'
@@ -49,21 +73,21 @@ class TrajectoryDataset(Dataset):
         nonLinearPed = []
 
         for file in allFiles:
-            data = read_file(file, self.delim)
+            data = readFile(file, self.delim)
             frames = np.unique(data[:, 0]).tolist()
-            logger.i('frames-> %s', np.array_repr(np.array(frames)))
+            # logger.i('frames-> %s', np.array_repr(np.array(frames)))
             framesData = []
             for frame in frames:
                 framesData.append(data[frame == data[:, 0]])
-                logger.i('append framesData-> %s', np.array_repr(np.array(framesData)))
+                # logger.i('append framesData-> %s', np.array_repr(np.array(framesData)))
             numSequences = int(math.ceil((len(frames)-self.seqLen+1)/self.skip))
-            logger.i('numSequences-> %d', numSequences)
+            # logger.i('numSequences-> %d', numSequences)
 
             for idx in range(0, numSequences*self.skip+1, self.skip):
                 currSeqData = np.concatenate(framesData[idx:idx+self.seqLen], axis=0)
-                logger.i('append currSeqData-> %s', np.array_repr(np.array(currSeqData)))
+                # logger.i('append currSeqData-> %s', np.array_repr(np.array(currSeqData)))
                 pedsInCurSeq = np.unique(currSeqData[:, 1])
-                logger.i('append pedsInCurSeq-> %s', np.array_repr(np.array(pedsInCurSeq)))
+                # logger.i('append pedsInCurSeq-> %s', np.array_repr(np.array(pedsInCurSeq)))
                 currSeqRel = np.zeros((len(pedsInCurSeq), 2, self.seqLen))
                 currSeq = np.zeros((len(pedsInCurSeq), 2, self.seqLen,))
                 currLossMask = np.zeros((len(pedsInCurSeq), self.seqLen))
@@ -71,30 +95,30 @@ class TrajectoryDataset(Dataset):
                 nonLinearPed = []
 
                 for _, pedId in enumerate(pedsInCurSeq):
-                    logger.i("pedId = %d", pedId)
+                    # logger.i("pedId = %d", pedId)
                     currPedSeq = currSeqData[currSeqData[:, 1] == pedId, :]
                     currPedSeq = np.around(currPedSeq, decimals=4)
-                    logger.i('append currPedSeq-> %s', np.array_repr(np.array(currPedSeq)))
+                    # logger.i('append currPedSeq-> %s', np.array_repr(np.array(currPedSeq)))
                     padFront = frames.index(currPedSeq[0, 0]) - idx
                     padEnd = frames.index(currPedSeq[-1, 0]) - idx + 1
-                    logger.i("padFront = %d , padEnd = %d", padFront, padEnd)
+                    # logger.i("padFront = %d , padEnd = %d", padFront, padEnd)
                     if padEnd-padFront != self.seqLen:
                         continue
                     currPedSeq = np.transpose(currPedSeq[:, 2:])
                     currPedSeq = currPedSeq
-                    logger.i('append currPedSeq-> %s', np.array_repr(np.array(currPedSeq)))
+                    # logger.i('append currPedSeq-> %s', np.array_repr(np.array(currPedSeq)))
                     relCurrPedSeq = np.zeros(currPedSeq.shape)
                     relCurrPedSeq[:, 1:] = currPedSeq[:, 1:]-currPedSeq[:, :-1]
-                    logger.i('append relCurrPedSeq-> %s', np.array_repr(np.array(relCurrPedSeq)))
+                    # logger.i('append relCurrPedSeq-> %s', np.array_repr(np.array(relCurrPedSeq)))
                     _idx = numPedsConsidered
                     currSeq[_idx, :, padFront:padEnd] = currPedSeq
-                    logger.i('append currSeq-> %s', np.array_repr(np.array(currSeq)))
+                    # logger.i('append currSeq-> %s', np.array_repr(np.array(currSeq)))
                     currSeqRel[_idx, :, padFront:padEnd] = relCurrPedSeq
-                    logger.i('append currSeqRel-> %s', np.array_repr(np.array(currSeqRel)))
+                    # logger.i('append currSeqRel-> %s', np.array_repr(np.array(currSeqRel)))
                     nonLinearPed.append(polyFit(currPedSeq, predLen, threshold))
-                    logger.i('append nonLinearPed-> %s', np.array_repr(np.array(nonLinearPed)))
+                    # logger.i('append nonLinearPed-> %s', np.array_repr(np.array(nonLinearPed)))
                     currLossMask[_idx, padFront:padEnd] = 1
-                    logger.i('append currLossMask-> %s', np.array_repr(np.array(currLossMask)))
+                    # logger.i('append currLossMask-> %s', np.array_repr(np.array(currLossMask)))
                     numPedsConsidered += 1
                 
                 if numPedsConsidered > minPed:        
@@ -133,10 +157,10 @@ class TrajectoryDataset(Dataset):
             self.nonLinearPed[start:end], self.lossMask[start:end, :]
         ]
         return out
-
+    
 dset = TrajectoryDataset('data_loader/test',
         obsLen=1,
         predLen=2,
         skip=1,
         delim='\t')
-print(dset.__len__())
+print(dset.__getitem__(1))

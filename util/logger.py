@@ -9,7 +9,7 @@ class logger(singleton('logger', (object,), {})):
             os.makedirs(self.logDir_)
         
         self.logFormat_ = logging.Formatter('%(asctime)s-%(name)s-%(levelname)s-%(message)s')
-        self.fileHandler_ = logging.FileHandler(os.path.join(self.logDir_, 'log'))
+        self.fileHandler_ = logging.FileHandler(os.path.join(self.logDir_, 'output.log'))
         self.fileHandler_.setFormatter(self.logFormat_)
         self.consoleHandler_ = logging.StreamHandler()
         self.consoleHandler_.setFormatter(self.logFormat_)

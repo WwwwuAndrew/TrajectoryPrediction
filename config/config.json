@@ -1,0 +1,7 @@
+{
+    "delim"            :"tab",
+    "loaderNumWorkers" :1,
+    "obsLen"           :8,
+    "predLen"          :8,
+    "skip"             :1
+}
