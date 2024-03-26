@@ -157,10 +157,3 @@ class TrajectoryDataset(Dataset):
             self.nonLinearPed[start:end], self.lossMask[start:end, :]
         ]
         return out
-    
-dset = TrajectoryDataset('data_loader/test',
-        obsLen=1,
-        predLen=2,
-        skip=1,
-        delim='\t')
-print(dset.__getitem__(1))
