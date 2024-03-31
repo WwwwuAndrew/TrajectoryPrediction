@@ -3,7 +3,7 @@ import math
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-import util.logger as logger
+import utils.logger as logger
 
 def seqCollate(data):
     (obs_seq_list, pred_seq_list, obs_seq_rel_list, pred_seq_rel_list,
@@ -137,7 +137,7 @@ class TrajectoryDataset(Dataset):
         self.obsTraj = torch.from_numpy(seqList[:, :, :self.obsLen]).type(torch.float)
         self.predTraj = torch.from_numpy(seqList[:, :, self.obsLen:]).type(torch.float)
         self.obsTrajRel = torch.from_numpy(seqListRel[:, :, :self.obsLen]).type(torch.float)
-        self.predTrajRel = torch.from_numpy(seqList[:, :, self.obsLen:]).type(torch.float)
+        self.predTrajRel = torch.from_numpy(seqListRel[:, :, self.obsLen:]).type(torch.float)
         self.lossMask = torch.from_numpy(lossMaskList).type(torch.float)
         self.nonLinearPed = torch.from_numpy(nonLinearPed).type(torch.float)
         cumStartIdx = [0] + np.cumsum(numPedsInSeq).tolist()

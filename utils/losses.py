@@ -1,9 +1,10 @@
 import torch
 
-def l2Loss(predTraj, predTrajGt, lossMask, random=0, mode='average'):
+def l2Loss(predTraj, predTrajGt, lossMask=None, random=0, mode='average'):
     seqLen, batch, _ = predTraj.size()
-    loss = (lossMask.unsqueeze(dim=2) *
-            (predTrajGt.permute(1, 0, 2) - predTraj.permute(1, 0, 2))**2)
+    loss =(predTrajGt.permute(1, 0, 2) - predTraj.permute(1, 0, 2))**2
+    if lossMask != None:
+        loss = lossMask.unsqueeze(dim=2) * loss
     if mode == 'sum':
         return torch.sum(loss)
     elif mode == 'average':
