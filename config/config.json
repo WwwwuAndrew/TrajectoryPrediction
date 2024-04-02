@@ -1,7 +1,13 @@
 {
+    "dataPath"         :"data_sets/ETH-UCY/eth/train",
+    "batchSize"        :64,
+    "epochs"           :50,
+    
     "delim"            :"tab",
     "loaderNumWorkers" :1,
     "obsLen"           :8,
     "predLen"          :12,
-    "skip"             :1
+    "skip"             :1,
+
+    "lr"               :0.0001
 }

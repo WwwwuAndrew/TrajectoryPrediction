@@ -4,17 +4,17 @@ from torch.utils.data import DataLoader
 def dataLoader(args, path):
     dataSet = TrajectoryDataset(
         path,
-        obsLen=args.obs_len,
-        predLen=args.pred_len,
-        skip=args.skip,
-        delim=args.delim
+        args['obsLen'],
+        args['predLen'],
+        args['skip'],
+        args['delim']
     )
 
     loader = DataLoader(
         dataSet,
-        batch_size=args.batch_size,
+        batch_size=args['batchSize'],
         shuffle=True,
-        num_workers=args.num_workers,
+        num_workers=args['loaderNumWorkers'],
         collate_fn=seqCollate
     )
     return dataSet, loader
