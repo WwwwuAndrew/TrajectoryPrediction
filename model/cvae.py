@@ -4,6 +4,7 @@ import utils.logger as logger
 
 class CVAE(nn.Module):
     def __init__(self, inputDim, latentSize, outputDim):
+        super().__init__()
         self.inputDim = inputDim
         self.latentSize = latentSize
         self.outputDim = outputDim
