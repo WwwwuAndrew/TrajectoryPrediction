@@ -16,16 +16,26 @@ def seqCollate(data):
 
     # Data format: batch, input_size, seq_len
     # LSTM input format: seq_len, batch, input_size
-    obs_traj = torch.cat(obs_seq_list, dim=0).permute(2, 0, 1)
-    pred_traj = torch.cat(pred_seq_list, dim=0).permute(2, 0, 1)
-    obs_traj_rel = torch.cat(obs_seq_rel_list, dim=0).permute(2, 0, 1)
-    pred_traj_rel = torch.cat(pred_seq_rel_list, dim=0).permute(2, 0, 1)
-    non_linear_ped = torch.cat(non_linear_ped_list)
-    loss_mask = torch.cat(loss_mask_list, dim=0)
+    # obs_traj = torch.cat(obs_seq_list, dim=0).permute(2, 0, 1)
+    # pred_traj = torch.cat(pred_seq_list, dim=0).permute(2, 0, 1)
+    # obs_traj_rel = torch.cat(obs_seq_rel_list, dim=0).permute(2, 0, 1)
+    # pred_traj_rel = torch.cat(pred_seq_rel_list, dim=0).permute(2, 0, 1)
+    # non_linear_ped = torch.cat(non_linear_ped_list)
+    # loss_mask = torch.cat(loss_mask_list, dim=0)
+    obs_traj = torch.tensor(obs_seq_list)
+    pred_traj = torch.tensor(pred_seq_list)
+    obs_traj_rel = torch.tensor(obs_seq_rel_list)
+    pred_traj_rel = torch.tensor(pred_seq_rel_list)
+    non_linear_ped = torch.tensor(non_linear_ped_list)
+    loss_mask = torch.tensor(loss_mask_list)
     seq_start_end = torch.LongTensor(seq_start_end)
+    # out = [
+    #     obs_traj, pred_traj, obs_traj_rel, pred_traj_rel, non_linear_ped,
+    #     loss_mask, seq_start_end
+    # ]
     out = [
-        obs_traj, pred_traj, obs_traj_rel, pred_traj_rel, non_linear_ped,
-        loss_mask, seq_start_end
+        obs_seq_list, pred_seq_list, obs_seq_rel_list, pred_seq_rel_list,
+        non_linear_ped_list, loss_mask_list, seq_start_end
     ]
 
     return tuple(out)
@@ -73,6 +83,7 @@ class TrajectoryDataset(Dataset):
         nonLinearPed = []
 
         for file in allFiles:
+            logger.i("file->%s", file)
             data = readFile(file, self.delim)
             frames = np.unique(data[:, 0]).tolist()
             # logger.i('frames-> %s', np.array_repr(np.array(frames)))
